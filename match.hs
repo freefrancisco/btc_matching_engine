@@ -6,6 +6,26 @@ import Control.Applicative
 import qualified Data.ByteString.Lazy as B
 import Network.HTTP.Conduit (simpleHttp)
 
+data OrderBook =
+    OrderBook { timestamp  :: String
+            , bids  :: [[String]]
+            , asks   :: [[String]]
+            } deriving Show
+
+instance FromJSON OrderBook where
+    parseJSON (Object v) =
+        OrderBook <$> v .: "timestamp"
+                  <*> v .: "bids"
+                  <*> v .: "asks"
+    parseJSON _ = mzero
+
+instance ToJSON OrderBook where
+    toJSON (OrderBook timestamp bids asks) =
+        object [ "timestamp" .= timestamp
+            , "bids"      .= bids
+            , "asks"      .= asks
+            ]
+
 data Ticker =
   Ticker { last  :: String
          , high  :: String
@@ -16,39 +36,40 @@ data Ticker =
            } deriving Show
 
 instance FromJSON Ticker where
- parseJSON (Object v) =
-    Ticker <$> v .: "last"
-           <*> v .: "high"
-           <*> v .: "low"
-           <*> v .: "volume"
-           <*> v .: "bid"
-           <*> v .: "ask"
-parseJSON _ = mzero
+    parseJSON (Object v) =
+        Ticker <$> v .: "last"
+            <*> v .: "high"
+            <*> v .: "low"
+            <*> v .: "volume"
+            <*> v .: "bid"
+            <*> v .: "ask"
+    parseJSON _ = mzero
 
 instance ToJSON Ticker where
- toJSON (Ticker last high low volume bid ask) =
-    object [ "last"   .= last
-           , "high"   .= high
-           , "low"    .= low
-           , "volume" .= volume
-           , "bid"    .= bid
-           , "ask"    .= ask
-           ]
+    toJSON (Ticker last high low volume bid ask) =
+        object [ "last"   .= last
+            , "high"   .= high
+            , "low"    .= low
+            , "volume" .= volume
+            , "bid"    .= bid
+            , "ask"    .= ask
+            ]
 
-jsonURL :: String
-jsonURL = "https://www.bitstamp.net/api/ticker/"
+jsonTickerURL :: String
+jsonTickerURL = "https://www.bitstamp.net/api/ticker/"
 
-getJSON :: IO B.ByteString
-getJSON = simpleHttp jsonURL
+jsonOrderBookURL :: String
+jsonOrderBookURL = "https://www.bitstamp.net/api/order_book/"
+
+getTickerJSON :: IO B.ByteString
+getTickerJSON = simpleHttp jsonTickerURL
+
+getOrderBookJSON :: IO B.ByteString
+getOrderBookJSON = simpleHttp jsonOrderBookURL
 
 main :: IO ()
 main = do
- -- Get JSON data and decode it
-    d <- (eitherDecode <$> getJSON) :: IO (Either String Ticker)
- -- If d is Left, the JSON was malformed.
- -- In that case, we report the error.
- -- Otherwise, we perform the operation of
- -- our choice. In this case, just print it.
+    d <- (eitherDecode <$> getOrderBookJSON) :: IO (Either String OrderBook)
     case d of
         Left err -> putStrLn err
         Right ps -> print ps
