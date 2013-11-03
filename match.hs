@@ -27,22 +27,22 @@ instance ToJSON OrderBook where
             ]
 
 data Ticker =
-  Ticker { last  :: String
-         , high  :: String
-         , low   :: String
-         , volume :: String
-         , bid :: String
-         , ask :: String
+  Ticker { last   :: Double
+         , high   :: Double
+         , low    :: Double
+         , volume :: Double
+         , bid    :: Double
+         , ask    :: Double
            } deriving Show
 
 instance FromJSON Ticker where
     parseJSON (Object v) =
-        Ticker <$> v .: "last"
-            <*> v .: "high"
-            <*> v .: "low"
-            <*> v .: "volume"
-            <*> v .: "bid"
-            <*> v .: "ask"
+        Ticker <$> liftM read (v .: "last")
+               <*> liftM read (v .: "high")
+               <*> liftM read (v .: "low")
+               <*> liftM read (v .: "volume")
+               <*> liftM read (v .: "bid")
+               <*> liftM read (v .: "ask")
     parseJSON _ = mzero
 
 instance ToJSON Ticker where
@@ -69,7 +69,9 @@ getOrderBookJSON = simpleHttp jsonOrderBookURL
 
 main :: IO ()
 main = do
-    d <- (eitherDecode <$> getOrderBookJSON) :: IO (Either String OrderBook)
+--    d <- (eitherDecode <$> getOrderBookJSON) :: IO (Either String OrderBook)
+
+    d <- (eitherDecode <$> getTickerJSON) :: IO (Either String Ticker)
     case d of
         Left err -> putStrLn err
         Right ps -> print ps
